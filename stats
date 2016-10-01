@@ -1,3 +1,26 @@
 #!/bin/bash
-echo "Hello, world!"
 
+# Prints the usage message to stderr and exits with a status code of 1
+usage() {
+    echo "Usage: `basename $0` {-rows|-cols} [file]" >&2
+    exit 1
+}
+
+# If the number of args is not one or two then call the usage function
+if [[ !($# -eq 1 || $# -eq 2) ]]; then
+    usage
+fi
+
+# Determine whether or not row or column stats should be calculated, or call
+# the usage function if this cannot be determined
+if [[ $1 == -r* ]]; then
+    calculate_row_stats=true
+elif [[ $1 == -c* ]]; then
+    calculate_row_stats=false
+else
+    usage
+fi
+
+echo "calculate_row_stats=$calculate_row_stats"
+
+exit
