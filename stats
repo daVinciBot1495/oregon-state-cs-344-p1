@@ -1,9 +1,78 @@
 #!/bin/bash
 
+# Initialize the variables used to store the input in a matrix. Note that the
+# matrix is actually a single array and the data is arranged in row-major
+# order.
+typeset -i num_rows=0
+typeset -i num_cols=0
+typeset -a matrix_array=()
+
 # Prints the usage message to stderr and exits with a status code of 1
 usage() {
     echo "Usage: `basename $0` {-rows|-cols} [file]" >&2
     exit 1
+}
+
+# Reads the given file into matrix_array, sets num_rows, and sets num_cols
+read_matrix() {
+    # Since the matrix should be arranged in row-major order only the index
+    # where data should be inserted next needs to be maintained
+    local -i index=1
+
+    # For each line in the file
+    while read line; do
+        # Initialize the number of columns to 0 since this has not been
+        # determined yet
+        num_cols=0
+
+        # Split the line by tabs using the cut command and iterate through each
+        # column value
+        for col_value in $(echo $line | cut -f 1-); do
+            # Convert the column value to an integer
+            local -i col_value_int=$col_value
+
+            # Insert the column value into the matrix
+            matrix_array[index]=$col_value_int
+
+            # Increment the index so that the next column value is inserted
+            # into the correct location in the matrix
+            ((index++))
+
+            # Increment the number of columns. Note that this done for every
+            # row. This is okay since it is assumed that every line has the
+            # same number of columns. After the final line is processed the
+            # number of columns will be correctly set.
+            ((num_cols++))
+        done
+
+        # Increment the number of rows. After the final line is process the
+        # number of rows will be correctly set.
+        ((num_rows++))
+    done < $1
+}
+
+# Writes matrix_array to stdout
+print_matrix() {
+    # For each row
+    for ((row=1;row<=num_rows;++row)); do
+        # For each column
+        for ((col=1;col<=num_cols;++col)); do
+            # Compute the index of the value at (row, col) in the matrix
+            local -i index=$(((row - 1) * num_cols + (col - 1) + 1))
+
+            # Get the value at (row, col) in the matrix
+            local -i value=${matrix_array[index]}
+
+            # If the value is in the last column of the matrix then echo it
+            # with a new line character after it. Otherwise, echo the value
+            # with a tab character after it.
+            if [[ $col -eq $num_cols ]]; then
+                echo $value
+            else
+                echo -en "$value\t"
+            fi
+        done
+    done
 }
 
 # If the number of args is not one or two then call the usage function
@@ -21,6 +90,11 @@ else
     usage
 fi
 
-echo "calculate_row_stats=$calculate_row_stats"
+# Read the matrix from a file if one is provided. Otherwise, read the matrix
+# from standard input
+read_matrix "${2:-/dev/stdin}"
+
+# Writes the matrix to stdout
+print_matrix
 
 exit
