@@ -39,13 +39,13 @@ read_matrix() {
             ((index++))
 
             # Increment the number of columns. Note that this done for every
-            # row. This is okay since it is assumed that every line has the
+            # line. This is okay since it is assumed that every line has the
             # same number of columns. After the final line is processed the
             # number of columns will be correctly set.
             ((num_cols++))
         done
 
-        # Increment the number of rows. After the final line is process the
+        # Increment the number of rows. After the final line is processed the
         # number of rows will be correctly set.
         ((num_rows++))
     done < $1
@@ -90,8 +90,15 @@ else
     usage
 fi
 
+# If a file is provided, but it does not exist or is not a regular file write
+# an error message to stderr and exit
+if [[ $# -eq 2 && !(-f $2) ]]; then
+    echo "Usage: \"$2\" does not exist or is not a reqular file" >&2
+    exit 1
+fi
+
 # Read the matrix from a file if one is provided. Otherwise, read the matrix
-# from standard input
+# from standard input.
 read_matrix "${2:-/dev/stdin}"
 
 # Writes the matrix to stdout
