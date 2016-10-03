@@ -36,18 +36,18 @@ read_matrix() {
 
             # Increment the index so that the next column value is inserted
             # into the correct location in the matrix
-            ((index++))
+            (( index++ ))
 
             # Increment the number of columns. Note that this done for every
             # line. This is okay since it is assumed that every line has the
             # same number of columns. After the final line is processed the
             # number of columns will be correctly set.
-            ((num_cols++))
+            (( num_cols++ ))
         done
 
         # Increment the number of rows. After the final line is processed the
         # number of rows will be correctly set.
-        ((num_rows++))
+        (( num_rows++ ))
     done < $1
 }
 
@@ -58,7 +58,7 @@ print_matrix() {
         # For each column
         for ((col=1;col<=num_cols;++col)); do
             # Compute the index of the value at (row, col) in the matrix
-            local -i index=$(((row - 1) * num_cols + (col - 1) + 1))
+            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
 
             # Get the value at (row, col) in the matrix
             local -i value=${matrix_array[index]}
