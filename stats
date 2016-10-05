@@ -7,6 +7,9 @@ typeset -i num_rows=0
 typeset -i num_cols=0
 typeset -a matrix_array=()
 
+# Initialize the variables used to store the averages and medians
+typeset -a averages=()
+
 # Prints the usage message to stderr and exits with a status code of 1
 usage() {
     echo "Usage: `basename $0` {-rows|-cols} [file]" >&2
@@ -51,6 +54,56 @@ read_matrix() {
     done < $1
 }
 
+# Calculate the row averages of the matrix.
+calc_row_averages() {
+    # Clear the averages array
+    averages=()
+
+    for ((row=1;row<=num_rows;++row)); do
+        local -i row_sum=0
+
+        for ((col=1;col<=num_cols;++col)); do
+            # Compute the index of the value at (row, col) in the matrix
+            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
+
+            # Get the value at (row, col) in the matrix and add it to the row
+            # sum
+            row_sum+=${matrix_array[index]}
+        done
+
+        # Insert the row average into the averages array. Conceptually, the row
+        # average is just the sum of the row elements divided by the number of
+        # columns. However, in bash scripting only integer division is
+        # performed. Hence, in order to round the average to the nearest whole
+        # number the number of columns divided by two is added to the row sum
+        # prior to dividing by the number of columns.
+        averages[row]=$(( (row_sum + num_cols / 2) / num_cols ))
+    done
+}
+
+# Calculates the column averages of the matrix.
+calc_col_averages() {
+    # Clear the averages array
+    averages=()
+
+    for ((col=1;col<=num_cols;++col)); do
+        local -i col_sum=0
+
+        for ((row=1;row<=num_rows;++row)); do
+            # Compute the index of the value at (row, col) in the matrix
+            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
+
+            # Get the value at (row, col) in the matrix and add it to the col
+            # sum
+            col_sum+=${matrix_array[index]}
+        done
+
+        # Insert the column average into the averages array similar to how
+        # it's done for a row average.
+        averages[col]=$(( (col_sum + num_rows / 2) / num_rows ))
+    done
+}
+
 # Writes matrix_array to stdout
 print_matrix() {
     # For each row
@@ -75,6 +128,11 @@ print_matrix() {
     done
 }
 
+# Writes an array to stdout using the first argument as a delimiter
+print_array() {
+    local IFS="$1"; shift; echo "$*";
+}
+
 # If the number of args is not one or two then call the usage function
 if [[ !($# -eq 1 || $# -eq 2) ]]; then
     usage
@@ -83,9 +141,9 @@ fi
 # Determine whether or not row or column stats should be calculated, or call
 # the usage function if this cannot be determined
 if [[ $1 == -r* ]]; then
-    calculate_row_stats=true
+    calc_row_stats=true
 elif [[ $1 == -c* ]]; then
-    calculate_row_stats=false
+    calc_row_stats=false
 else
     usage
 fi
@@ -101,7 +159,23 @@ fi
 # from standard input.
 read_matrix "${2:-/dev/stdin}"
 
+echo
+
 # Writes the matrix to stdout
+echo "Input:"
 print_matrix
+echo
+
+if [[ $calc_row_stats = true ]]; then
+    calc_row_averages
+    echo "Averages:"
+    print_array $'\n' ${averages[*]}
+    echo
+else
+    calc_col_averages
+    echo "Averages:"
+    print_array $'\t' ${averages[*]}
+    echo
+fi
 
 exit
