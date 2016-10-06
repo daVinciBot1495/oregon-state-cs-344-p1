@@ -20,7 +20,7 @@ usage() {
 read_matrix() {
     # Since the matrix should be arranged in row-major order only the index
     # where data should be inserted next needs to be maintained
-    local -i index=1
+    local -i index=0
 
     # For each line in the file
     while read line; do
@@ -59,12 +59,12 @@ calc_row_averages() {
     # Clear the averages array
     averages=()
 
-    for ((row=1;row<=num_rows;++row)); do
+    for ((row=0;row<num_rows;++row)); do
         local -i row_sum=0
 
-        for ((col=1;col<=num_cols;++col)); do
+        for ((col=0;col<num_cols;++col)); do
             # Compute the index of the value at (row, col) in the matrix
-            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
+            local -i index=$(( row * num_cols + col ))
 
             # Get the value at (row, col) in the matrix and add it to the row
             # sum
@@ -86,12 +86,12 @@ calc_col_averages() {
     # Clear the averages array
     averages=()
 
-    for ((col=1;col<=num_cols;++col)); do
+    for ((col=0;col<num_cols;++col)); do
         local -i col_sum=0
 
-        for ((row=1;row<=num_rows;++row)); do
+        for ((row=0;row<num_rows;++row)); do
             # Compute the index of the value at (row, col) in the matrix
-            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
+            local -i index=$(( row * num_cols + col ))
 
             # Get the value at (row, col) in the matrix and add it to the col
             # sum
@@ -106,20 +106,25 @@ calc_col_averages() {
 
 # Writes matrix_array to stdout
 print_matrix() {
+    local -i local_num_rows=$1
+    local -i local_num_cols=$2
+    local local_matrix_ref=$3[@]
+    local -a local_matrix_array=("${!local_matrix_ref}")
+
     # For each row
-    for ((row=1;row<=num_rows;++row)); do
+    for ((row=0;row<local_num_rows;++row)); do
         # For each column
-        for ((col=1;col<=num_cols;++col)); do
+        for ((col=0;col<local_num_cols;++col)); do
             # Compute the index of the value at (row, col) in the matrix
-            local -i index=$(( (row - 1) * num_cols + (col - 1) + 1 ))
+            local -i index=$(( row * local_num_cols + col ))
 
             # Get the value at (row, col) in the matrix
-            local -i value=${matrix_array[index]}
+            local -i value=${local_matrix_array[index]}
 
             # If the value is in the last column of the matrix then echo it
             # with a new line character after it. Otherwise, echo the value
             # with a tab character after it.
-            if [[ $col -eq $num_cols ]]; then
+            if [[ $col -eq $(( $local_num_cols - 1)) ]]; then
                 echo $value
             else
                 echo -en "$value\t"
@@ -163,7 +168,7 @@ echo
 
 # Writes the matrix to stdout
 echo "Input:"
-print_matrix
+print_matrix $num_rows $num_cols matrix_array
 echo
 
 if [[ $calc_row_stats = true ]]; then
