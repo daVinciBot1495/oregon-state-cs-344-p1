@@ -111,9 +111,7 @@ print_matrix() {
     local local_matrix_ref=$3[@]
     local -a local_matrix_array=("${!local_matrix_ref}")
 
-    # For each row
     for ((row=0;row<local_num_rows;++row)); do
-        # For each column
         for ((col=0;col<local_num_cols;++col)); do
             # Compute the index of the value at (row, col) in the matrix
             local -i index=$(( row * local_num_cols + col ))
@@ -136,6 +134,22 @@ print_matrix() {
 # Writes an array to stdout using the first argument as a delimiter
 print_array() {
     local IFS="$1"; shift; echo "$*";
+}
+
+# Writes the row stats to stdout
+print_row_stats() {
+    echo "Average Median"
+    for ((row=0;row<num_rows;++row)); do
+        echo -e "${averages[row]}\t${averages[row]}"
+    done
+}
+
+# Writes the column stats to stdout
+print_col_stats() {
+    echo "Averages:"
+    print_array $'\t' ${averages[*]}
+    echo "Medians:"
+    print_array $'\t' ${averages[*]}
 }
 
 # If the number of args is not one or two then call the usage function
@@ -164,23 +178,12 @@ fi
 # from standard input.
 read_matrix "${2:-/dev/stdin}"
 
-echo
-
-# Writes the matrix to stdout
-echo "Input:"
-print_matrix $num_rows $num_cols matrix_array
-echo
-
 if [[ $calc_row_stats = true ]]; then
     calc_row_averages
-    echo "Averages:"
-    print_array $'\n' ${averages[*]}
-    echo
+    print_row_stats
 else
     calc_col_averages
-    echo "Averages:"
-    print_array $'\t' ${averages[*]}
-    echo
+    print_col_stats
 fi
 
 exit
