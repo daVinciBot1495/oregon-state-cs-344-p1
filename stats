@@ -9,6 +9,7 @@ typeset -a matrix_array=()
 
 # Initialize the variables used to store the averages and medians
 typeset -a averages=()
+typeset -a medians=()
 
 # Prints the usage message to stderr and exits with a status code of 1
 usage() {
@@ -56,8 +57,7 @@ read_matrix() {
 
 # Calculate the row averages of the matrix.
 calc_row_averages() {
-    # Clear the averages array
-    averages=()
+    averages=() # Clear the averages array
 
     for ((row=0;row<num_rows;++row)); do
         local -i row_sum=0
@@ -81,10 +81,34 @@ calc_row_averages() {
     done
 }
 
+# Calculate the row medians of the matrix
+calc_row_medians() {
+    medians=() # Clear the medians array
+
+    for ((row=0;row<num_rows;++row)); do
+        local -a row_copy=()
+
+        for ((col=0;col<num_cols;++col)); do
+            # Compute the index of the value at (row, col) in the matrix
+            local -i index=$(( row * num_cols + col ))
+
+            # Get the value at (row, col) in the matrix and add it to the row
+            # copy array
+            row_copy[col]=${matrix_array[index]}
+        done
+
+        # Calculate the median of the row. The strategy is to compute the index
+        # of the middle element in the row copy array, sort the row copy array,
+        # and then insert the middle element into the medians array.
+        local -i row_median_index=$(( (num_cols / 2) + 1 ))
+        local -i row_median=$(echo "${row_copy[*]}" | tr " " "\n" | sort -g | sed -n "${row_median_index}p")
+        medians[row]=$row_median
+    done
+}
+
 # Calculates the column averages of the matrix.
 calc_col_averages() {
-    # Clear the averages array
-    averages=()
+    averages=() # Clear the averages array
 
     for ((col=0;col<num_cols;++col)); do
         local -i col_sum=0
@@ -101,6 +125,31 @@ calc_col_averages() {
         # Insert the column average into the averages array similar to how
         # it's done for a row average.
         averages[col]=$(( (col_sum + num_rows / 2) / num_rows ))
+    done
+}
+
+# Calculate the column medians of the matrix
+calc_col_medians() {
+    medians=() # Clear the medians array
+
+    for ((col=0;col<num_cols;++col)); do
+        local -a col_copy=()
+
+        for ((row=0;row<num_rows;++row)); do
+            # Compute the index of the value at (row, col) in the matrix
+            local -i index=$(( row * num_cols + col ))
+
+            # Get the value at (row, col) in the matrix and add it to the
+            # column copy array
+            col_copy[row]=${matrix_array[index]}
+        done
+
+        # Calculate the median of the column. The strategy is to compute the
+        # index of the middle element in the column copy array, sort the row
+        # copy array, and then insert the middle element into the medians array.
+        local -i col_median_index=$(( (num_rows / 2) + 1 ))
+        local -i col_median=$(echo "${col_copy[*]}" | tr " " "\n" | sort -g | sed -n "${col_median_index}p")
+        medians[col]=$col_median
     done
 }
 
@@ -140,7 +189,7 @@ print_array() {
 print_row_stats() {
     echo "Average Median"
     for ((row=0;row<num_rows;++row)); do
-        echo -e "${averages[row]}\t${averages[row]}"
+        echo -e "${averages[row]}\t${medians[row]}"
     done
 }
 
@@ -149,7 +198,7 @@ print_col_stats() {
     echo "Averages:"
     print_array $'\t' ${averages[*]}
     echo "Medians:"
-    print_array $'\t' ${averages[*]}
+    print_array $'\t' ${medians[*]}
 }
 
 # If the number of args is not one or two then call the usage function
@@ -180,9 +229,11 @@ read_matrix "${2:-/dev/stdin}"
 
 if [[ $calc_row_stats = true ]]; then
     calc_row_averages
+    calc_row_medians
     print_row_stats
 else
     calc_col_averages
+    calc_col_medians
     print_col_stats
 fi
 
