@@ -223,6 +223,13 @@ if [[ $# -eq 2 && !(-f $2) ]]; then
     exit 1
 fi
 
+# If a file is provided, but is empty write an error message to stderror and
+# exit
+if [[ $# -eq 2 && !(-s $2) ]]; then
+    echo "Usage: \"$2\" is empty"
+    exit 1
+fi
+
 # Read the matrix from a file if one is provided. Otherwise, read the matrix
 # from standard input.
 read_matrix "${2:-/dev/stdin}"
