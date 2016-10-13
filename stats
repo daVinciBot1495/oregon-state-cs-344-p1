@@ -18,6 +18,8 @@ usage() {
 }
 
 # Reads the given file into matrix_array, sets num_rows, and sets num_cols
+#
+# $1: The file to be read into matrix_array
 read_matrix() {
     # Since the matrix should be arranged in row-major order only the index
     # where data should be inserted next needs to be maintained
